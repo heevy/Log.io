@@ -14,9 +14,9 @@ sinon_chai = require 'sinon-chai'
 chai.use sinon_chai
 should = chai.should()
 
-{LogHarvester} = require '../../lib/harvester.js'
-{LogServer, WebServer} = require '../../lib/server.js'
-{WebClient} = require '../../lib/client.js'
+{LogHarvester} = require '../src/harvester.js'
+{LogServer, WebServer} = require '../src/server.js'
+{WebClient} = require '../src/client.js'
 logging = new winston.Logger
   transports: [ new winston.transports.Console level: 'error']
 
@@ -40,7 +40,7 @@ HARVESTER1_CONFIG =
     stream1: TEST_FILES[0..1]
     stream2: TEST_FILES[2..3]
   server:
-    host: '0.0.0.0'
+    host: '127.0.0.1'
     port: 28771
 
 HARVESTER2_CONFIG =
@@ -50,7 +50,7 @@ HARVESTER2_CONFIG =
     stream2: TEST_FILES[4..5]
     stream3: TEST_FILES[6..7]
   server:
-    host: '0.0.0.0'
+    host: '127.0.0.1'
     port: 28771
 
 LOG_SERVER_CONFIG =
@@ -71,30 +71,40 @@ webServer = new WebServer logServer, WEB_SERVER_CONFIG
 webServer.run()
 
 describe 'LogServer', ->
-  it 'should have no nodes or streams initially', ->
+  it 'should have no nodes or streams initially', (done)->
     _.keys(logServer.logNodes).should.have.length 0
     _.keys(logServer.logStreams).should.have.length 0
+    done()
 
+  expectedNodesCount = 2
+  it 'should have registered nodes once connected', (done) ->
+    callback = ->
+        logServer.logNodes.should.have.keys 'server01', 'server02'
+        done()
+    setTimeout callback,2000
+  
+  expectedStreamsCount = 3  
+  it 'should have registered streams once connected', (done) ->
+      callback = ->
+        logServer.logStreams.should.have.keys 'stream1', 'stream2', 'stream3'
+        done()
+      setTimeout callback,2000
+  
   # Connect harvesters
   harvester1 = new LogHarvester HARVESTER1_CONFIG
   harvester2 = new LogHarvester HARVESTER2_CONFIG
   harvester1.run()
   harvester2.run()
 
-  it 'should have registered nodes & streams once connected', ->
-    logServer.logNodes.should.have.keys 'server01', 'server02'
-    logServer.logStreams.should.have.keys 'stream1', 'stream2', 'stream3'
-
 # Initialize client
 
-webClient = new WebClient host: 'http://0.0.0.0:28772'
+webClient = new WebClient host: 'http://127.0.0.1:28772'
 
 # Write to watched files, verify end-to-end propagation
-
+#
 describe 'WebClient', ->
   it 'waits for server connection...', (connected) ->
-    webClient.socket.on 'initialized', ->
-
+    callback = ->
       describe 'WebClient state', ->
         it 'should be notified of registered nodes & streams', ->
           webClient.logNodes.should.have.length 2
@@ -106,7 +116,7 @@ describe 'WebClient', ->
           node1 = webClient.logNodes.get 'server01'
           screen1.addPair stream1, node1
           screen1.logMessages.should.have.length 0
-          
+
           describe 'log message propagation', ->
             it 'should populate client backbone collection on file writes', (done) ->
               msg1 = "log message 1"
@@ -121,3 +131,4 @@ describe 'WebClient', ->
                 done()
 
       connected()
+    setTimeout(callback, 1000)

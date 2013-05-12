@@ -20,8 +20,9 @@ task 'build', "Builds Log.io package", ->
 task 'compile', "Compiles CoffeeScript src/*.coffee to lib/*.js", ->
   console.log "Compiling src/*.coffee to lib/*.js"
   exec "#{COFFEE} --compile --output #{__dirname}/lib/ #{__dirname}/src/", (err, stdout, stderr) ->
-    throw err if err
     console.log stdout + stderr if stdout + stderr
+    throw err if err
+
 
 task 'browserify', "Compiles client.coffee to browser-friendly JS", ->
   console.log "Browserifying src/client.coffee to lib/log.io.js"
@@ -51,12 +52,12 @@ task 'ensure:configuration', "Ensures that config files exist in ~/.log.io/", ->
 task 'func_test', "Compiles & runs functional tests in test/", ->
   console.log "Compiling test/*.coffee to test/lib/*.js..."
   exec "#{COFFEE} --compile --output #{__dirname}/test/lib/ #{__dirname}/test/", (err, stdout, stderr) ->
-    throw err if err
     console.log stdout + stderr if stdout + stderr
+    throw err if err
     console.log "Running tests..."
-    exec "#{MOCHA} --reporter spec test/lib/functional.js", (err, stdout, stderr) ->
-      throw err if err
+    exec "#{MOCHA} -t 2000 --reporter spec test/lib/functional.js", (err, stdout, stderr) ->
       console.log stdout + stderr if stdout + stderr
+      throw err if err
 
 copyFile = (from, to) ->
   fs.createReadStream(from).pipe fs.createWriteStream to

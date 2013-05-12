@@ -76,14 +76,12 @@ describe 'LogServer', ->
     _.keys(logServer.logStreams).should.have.length 0
     done()
 
-  expectedNodesCount = 2
   it 'should have registered nodes once connected', (done) ->
     callback = ->
         logServer.logNodes.should.have.keys 'server01', 'server02'
         done()
     setTimeout callback,2000
   
-  expectedStreamsCount = 3  
   it 'should have registered streams once connected', (done) ->
       callback = ->
         logServer.logStreams.should.have.keys 'stream1', 'stream2', 'stream3'
